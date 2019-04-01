@@ -29,5 +29,23 @@ server.post("/api/register", (req, res) => {
     });
 });
 
+server.post("/api/login", (req, res) => {
+  let { username, password } = req.body;
+
+  Users.findBy({ username })
+    .first()
+    .then(user => {
+      // check the password guess against the database
+      if (user && bcrypt.compareSync(password, user.password)) {
+        res.status(200).json({ messsage: `Welcome ${user.username}!` });
+      } else {
+        res.status(401).json({ message: "Invalid Credentials" });
+      }
+    })
+    .catch(error => {
+      res.status(500).json(error);
+    });
+});
+
 const port = process.env.PORT || 6500;
 server.listen(port, () => console.log(`\n** Running on port ${port} **\n`));
