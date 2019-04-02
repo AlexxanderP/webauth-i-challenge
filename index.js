@@ -5,6 +5,8 @@ const bcrypt = require("bcryptjs");
 
 const server = express();
 
+const users = require("./database/dbConfig.js");
+
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
@@ -16,15 +18,20 @@ server.get("/", (req, res) => {
 
 //------ Post request for Register, included Bcrypt for Hashing------//
 server.post("/api/register", (req, res) => {
-  let user = req.body;
+  let { username, password } = req.body;
 
-  /// hash the password
-  const hash = bcrypt.hashSync(user.password, 8);
-  user.password = hash;
+  password = bcrypt.hashSync(password, 10);
 
-  Users.add(user)
-    .then(savedUser => {
-      res.status(201).json(savedUser);
+  users("users")
+    .insert(req.body)
+    .then(ids => {
+      const id = ids[0];
+      users("users")
+        .where({ id })
+        .first()
+        .then(user => {
+          res.status(200).json(user);
+        });
     })
     .catch(error => {
       res.status(500).json(error);
@@ -38,7 +45,7 @@ server.post("/api/login", (req, res) => {
   Users.findBy({ username })
     .first()
     .then(user => {
-      //check the password guess against the database-----/
+      //check the password against the database-----/
       if (user && bcrypt.compareSync(password, user.password)) {
         res.status(200).json({ message: `Welcome ${user.username}!` });
       } else {
@@ -88,7 +95,7 @@ function only(username) {
 }
 
 //------restricts access to the '/api/login' endpoint to users that are authenticated-----//
-server.get("/api/users", restricted, (req, res) => {
+server.get("/api/user", restricted, (req, res) => {
   Users.find()
     .then(users => {
       res.status(200).json(users);
