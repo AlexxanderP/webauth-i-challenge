@@ -42,9 +42,11 @@ server.post("/api/register", (req, res) => {
 server.post("/api/login", (req, res) => {
   let { username, password } = req.body;
 
-  Users.findBy({ username })
+  users("users")
+    .where({ username })
     .first()
     .then(user => {
+      console.log(user);
       //check the password against the database-----/
       if (user && bcrypt.compareSync(password, user.password)) {
         res.status(200).json({ message: `Welcome ${user.username}!` });
